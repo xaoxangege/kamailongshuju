@@ -1,0 +1,195 @@
+<!DOCTYPE html>
+<html lang="zh-CN">
+<head>
+<meta charset="UTF-8" />
+<title>今日数据统计</title>
+<style>
+  body {
+    font-family: "Microsoft YaHei", sans-serif;
+    background-color: #f4f4f4;
+    padding: 20px;
+    color: #333;
+  }
+  h2, h3 {
+    text-align: center;
+    margin-top: 40px;
+  }
+  table {
+    width: 90%;
+    margin: 20px auto;
+    border-collapse: collapse;
+    background-color: #fff;
+    box-shadow: 0 0 5px rgba(0,0,0,0.1);
+  }
+  th, td {
+    border: 1px solid #ccc;
+    padding: 8px 12px;
+    text-align: center;
+  }
+  th {
+    background-color: #eee;
+    cursor: pointer;
+  }
+  pre {
+    background: #fff;
+    width: 90%;
+    margin: 10px auto;
+    padding: 12px;
+    box-shadow: 0 0 5px rgba(0,0,0,0.05);
+    border-left: 4px solid #337ab7;
+  }
+  .button-container {
+    text-align: center;
+    margin-top: 20px;
+  }
+  button {
+    padding: 10px 24px;
+    background-color: #337ab7;
+    color: #fff;
+    border: none;
+    border-radius: 4px;
+    font-size: 16px;
+    cursor: pointer;
+  }
+  button:hover {
+    background-color: #286090;
+  }
+  #groupSummary {
+    width: 90%;
+    margin: 20px auto;
+    display: flex;
+    flex-direction: column;
+    gap: 20px;
+  }
+
+  .group-row {
+    display: flex;
+    flex-wrap: nowrap;
+    justify-content: center;
+    gap: 0;
+  }
+
+  .group-card {
+    background-color: #fff;
+    border: 1px solid #ccc;
+    border-right: none;
+    padding: 10px 14px;
+    font-family: monospace;
+    font-size: 18px;
+    box-shadow: 0 2px 6px rgba(0,0,0,0.1);
+    text-align: center;
+    min-width: 80px;
+    position: relative;
+    z-index: 1;
+    border-radius: 0;
+    margin: 0;
+  }
+
+  .group-card:first-child {
+    border-left: 1px solid #ccc;
+    border-top-left-radius: 4px;
+    border-bottom-left-radius: 4px;
+  }
+
+  .group-card:last-child {
+    border-right: 1px solid #ccc;
+    border-top-right-radius: 4px;
+    border-bottom-right-radius: 4px;
+  }
+
+  .group-card.group-total {
+    font-weight: bold;
+    background-color: #f0f8ff;
+    border-color: #337ab7;
+    color: #337ab7;
+    box-shadow: none;
+  }
+</style>
+
+</head>
+<body>
+
+<h3>小组合计</h3>
+<div id="groupSummary"></div>
+
+<div class="button-container">
+  <button onclick="loadData()">刷新数据</button>
+</div>
+
+<h2>存款人数统计(特殊金额自己算)</h2>
+<table id="subTable">
+  <thead>
+    <tr><th>昵称</th><th>2000</th><th>5000</th><th>10000</th><th>15000</th><th>20000</th></tr>
+  </thead>
+  <tbody></tbody>
+</table>
+
+<h2>个人今日总入款</h2>
+<table id="mainTable">
+  <thead>
+    <tr><th>昵称</th><th>笔数</th><th>金额</th></tr>
+  </thead>
+  <tbody></tbody>
+</table>
+
+<script>
+async function loadData() {
+  try {
+    // 主数据和汇总
+    const mainResp = await fetch('/main_data');
+    const mainJson = await mainResp.json();
+
+    // 渲染主表
+    const tbodyMain = document.querySelector('#mainTable tbody');
+    tbodyMain.innerHTML = '';
+    mainJson.data.forEach(row => {
+      const tr = document.createElement('tr');
+      row.forEach(cell => {
+        const td = document.createElement('td');
+        td.textContent = cell;
+        tr.appendChild(td);
+      });
+      tbodyMain.appendChild(tr);
+    });
+
+    // 渲染分组合计格子
+    const groupSummaryDiv = document.getElementById('groupSummary');
+    groupSummaryDiv.innerHTML = '';
+    mainJson.group_summary.forEach(line => {
+      const rowDiv = document.createElement('div');
+      rowDiv.className = 'group-row';
+      line.forEach(item => {
+        const cardDiv = document.createElement('div');
+        cardDiv.className = 'group-card';
+        cardDiv.innerHTML = `<div>${item.name}</div><div class="group-total">${item.value}</div>`;
+        rowDiv.appendChild(cardDiv);
+      });
+      groupSummaryDiv.appendChild(rowDiv);
+    });
+
+    // 副数据
+    const subResp = await fetch('/sub_data');
+    const subJson = await subResp.json();
+    const tbodySub = document.querySelector('#subTable tbody');
+    tbodySub.innerHTML = '';
+    subJson.forEach(row => {
+      const tr = document.createElement('tr');
+      row.forEach(cell => {
+        const td = document.createElement('td');
+        td.textContent = cell;
+        tr.appendChild(td);
+      });
+      tbodySub.appendChild(tr);
+    });
+  } catch (error) {
+    alert('加载数据失败，请检查服务端是否运行。');
+    console.error(error);
+  }
+}
+
+
+window.onload = loadData;
+</script>
+
+</body>
+</html>
